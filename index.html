@@ -3,150 +3,203 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TPASS 進度看板</title>
+    <title>TPASS 成就看板</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         .tab-content.hidden { display: none; }
         .record-card { border-left: 4px solid; }
+        .achievement-card { background: linear-gradient(135deg, #ffffff 0%, #f9fafb 100%); }
     </style>
 </head>
 <body class="bg-gray-50 font-sans pb-24 text-slate-800">
 
     <nav class="bg-indigo-600 text-white p-4 shadow-sm sticky top-0 z-50 flex justify-between items-center">
-        <h1 class="text-lg font-bold">TPASS 實時足跡</h1>
-        <button onclick="fetchData()" class="text-xs bg-indigo-500 px-3 py-1 rounded-full">同步資料</button>
+        <h1 class="text-lg font-bold italic tracking-tight">TPASS FOOTPRINT</h1>
+        <button onclick="fetchData()" class="text-xs bg-indigo-500 px-3 py-1 rounded-full border border-indigo-400">SYNC</button>
     </nav>
 
-    <!-- 快速載入指示 -->
+    <!-- 載入指示 -->
     <div id="loading" class="flex flex-col justify-center items-center h-64 text-indigo-600">
         <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600 mb-2"></div>
-        <p class="text-sm font-medium">讀取中...</p>
+        <p class="text-sm font-medium tracking-widest">ANALYZING DATA...</p>
     </div>
 
     <main id="app" class="max-w-md mx-auto p-4 hidden">
         
-        <!-- 首頁 -->
+        <!-- 首頁 (Dashboard) -->
         <div id="home" class="tab-content space-y-5">
             <!-- 回本進度條卡片 -->
             <div class="bg-white p-6 rounded-3xl shadow-sm border border-gray-100">
                 <div class="flex justify-between items-end mb-2">
-                    <h2 class="text-gray-500 text-sm font-bold">月票回本進度</h2>
-                    <span id="progress-text" class="text-indigo-600 font-black text-xl">0%</span>
+                    <h2 class="text-gray-500 text-xs font-bold uppercase tracking-wider">Current Progress</h2>
+                    <span id="progress-text" class="text-indigo-600 font-black text-2xl">0%</span>
                 </div>
-                
                 <div class="w-full bg-gray-100 rounded-full h-4 mb-3 overflow-hidden">
                     <div id="main-progress-bar" class="bg-indigo-600 h-full rounded-full transition-all duration-1000 w-0"></div>
                 </div>
-                
                 <div class="flex justify-between items-center">
                     <p class="text-2xl font-black text-slate-700" id="total-savings-val">NT$ 0 / $399</p>
                     <p id="latest-date" class="text-[10px] text-gray-400 italic">--</p>
                 </div>
             </div>
 
-            <!-- 分析卡片 -->
+            <!-- 關鍵卡片 -->
             <div class="grid grid-cols-2 gap-3">
                 <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100">
-                    <p class="text-[11px] text-gray-400 mb-1 font-bold">主力運具</p>
+                    <p class="text-[10px] text-gray-400 mb-1 font-bold uppercase">主力運具</p>
                     <p id="top-transport" class="font-bold text-slate-700">--</p>
-                    <p id="top-transport-count" class="text-[10px] text-indigo-500 mt-1">-- 次搭乘</p>
+                    <p id="top-transport-count" class="text-[10px] text-indigo-500 mt-1 font-medium">-- 次搭乘</p>
                 </div>
                 <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100">
-                    <p class="text-[11px] text-gray-400 mb-1 font-bold">最多紀錄日</p>
-                    <p id="busy-day" class="font-bold text-slate-700 font-mono text-sm">--</p>
-                    <p id="busy-count" class="text-[10px] text-indigo-500 mt-1">-- 筆資料</p>
+                    <p class="text-[10px] text-gray-400 mb-1 font-bold uppercase">最多紀錄日</p>
+                    <p id="busy-day" class="font-bold text-slate-700 font-mono text-xs">--</p>
+                    <p id="busy-count" class="text-[10px] text-indigo-500 mt-1 font-medium">-- 筆資料</p>
                 </div>
             </div>
 
-            <!-- 各運具分項回本 -->
-            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-                <div class="p-4 border-b border-gray-50 font-bold text-sm text-gray-500">運具回本佔比</div>
-                
+            <!-- 分項佔比 -->
+            <div class="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
+                <div class="p-4 border-b border-gray-50 font-bold text-xs text-gray-400 uppercase tracking-widest text-center">Allocation</div>
                 <div class="divide-y divide-gray-50">
-                    <!-- YouBike -->
                     <div onclick="showTab('youbike')" class="p-4 active:bg-gray-50 transition flex flex-col space-y-2">
                         <div class="flex justify-between items-center text-sm">
                             <span class="flex items-center font-bold">🚲 YouBike (<span id="yb-count">0</span>次)</span>
                             <span class="text-orange-600 font-bold" id="yb-percent">0%</span>
                         </div>
-                        <div class="w-full bg-gray-50 rounded-full h-2 overflow-hidden">
-                            <div id="yb-mini-bar" class="bg-orange-400 h-full transition-all duration-700 w-0"></div>
-                        </div>
-                        <p class="text-[11px] text-gray-400" id="yb-sum-text">已回本 NT$ 0</p>
+                        <div class="w-full bg-gray-50 rounded-full h-1.5 overflow-hidden"><div id="yb-mini-bar" class="bg-orange-400 h-full w-0"></div></div>
                     </div>
-
-                    <!-- 公車 -->
                     <div onclick="showTab('bus')" class="p-4 active:bg-gray-50 transition flex flex-col space-y-2">
                         <div class="flex justify-between items-center text-sm">
                             <span class="flex items-center font-bold">🚌 公車 (<span id="bus-count">0</span>次)</span>
                             <span class="text-emerald-600 font-bold" id="bus-percent">0%</span>
                         </div>
-                        <div class="w-full bg-gray-50 rounded-full h-2 overflow-hidden">
-                            <div id="bus-mini-bar" class="bg-emerald-500 h-full transition-all duration-700 w-0"></div>
-                        </div>
-                        <p class="text-[11px] text-gray-400" id="bus-sum-text">已回本 NT$ 0</p>
+                        <div class="w-full bg-gray-50 rounded-full h-1.5 overflow-hidden"><div id="bus-mini-bar" class="bg-emerald-500 h-full w-0"></div></div>
                     </div>
-
-                    <!-- 台鐵 -->
                     <div onclick="showTab('train')" class="p-4 active:bg-gray-50 transition flex flex-col space-y-2">
                         <div class="flex justify-between items-center text-sm">
                             <span class="flex items-center font-bold">🚆 台鐵 (<span id="train-count">0</span>次)</span>
                             <span class="text-blue-700 font-bold" id="train-percent">0%</span>
                         </div>
-                        <div class="w-full bg-gray-50 rounded-full h-2 overflow-hidden">
-                            <div id="train-mini-bar" class="bg-blue-600 h-full transition-all duration-700 w-0"></div>
-                        </div>
-                        <p class="text-[11px] text-gray-400" id="train-sum-text">已回本 NT$ 0</p>
+                        <div class="w-full bg-gray-50 rounded-full h-1.5 overflow-hidden"><div id="train-mini-bar" class="bg-blue-600 h-full w-0"></div></div>
                     </div>
                 </div>
-            </div>
-            
-            <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100">
-                <canvas id="transportChart" height="200"></canvas>
             </div>
         </div>
 
         <!-- YouBike 分頁 -->
         <div id="youbike" class="tab-content hidden space-y-4">
-            <div class="bg-orange-500 p-6 rounded-3xl text-white shadow-md">
-                <p class="text-sm opacity-90">YouBike 累計回本</p>
+            <div class="bg-orange-500 p-6 rounded-3xl text-white shadow-lg">
+                <p class="text-xs opacity-80 font-bold uppercase">YouBike Achievement</p>
                 <p class="text-4xl font-black">NT$ <span id="yb-savings">0</span></p>
+                <p class="text-[10px] mt-1 opacity-70 italic">已回本總額</p>
             </div>
+            
+            <div class="achievement-card p-5 rounded-3xl border border-gray-100 shadow-sm space-y-4">
+                <div class="flex items-center space-x-3">
+                    <div class="bg-orange-100 p-2 rounded-xl text-xl">🏆</div>
+                    <div>
+                        <h3 class="font-bold text-slate-700">騎乘成就</h3>
+                        <p class="text-xs text-gray-400">統計期間數據摘要</p>
+                    </div>
+                </div>
+                
+                <div class="grid grid-cols-2 gap-3">
+                    <div class="bg-white p-3 rounded-2xl border border-gray-50">
+                        <p class="text-[10px] text-gray-400 font-bold">騎乘總次數</p>
+                        <p class="text-xl font-black text-orange-600" id="yb-total-rides">0次</p>
+                        <p class="text-[9px] text-gray-400 mt-1" id="yb-types-desc">2.0: 0 / 2.0E: 0</p>
+                    </div>
+                    <div class="bg-white p-3 rounded-2xl border border-gray-50">
+                        <p class="text-[10px] text-gray-400 font-bold">解鎖站點數</p>
+                        <p class="text-xl font-black text-orange-600" id="yb-unique-stations">0站</p>
+                    </div>
+                    <div class="bg-white p-3 rounded-2xl border border-gray-50 col-span-2">
+                        <p class="text-[10px] text-gray-400 font-bold">車隊解鎖 (騎過幾台車)</p>
+                        <p class="text-xl font-black text-slate-700" id="yb-unique-bikes">0台</p>
+                        <p class="text-[9px] text-orange-600 font-bold mt-1" id="yb-top-bike">最常騎：--</p>
+                    </div>
+                </div>
+
+                <div class="space-y-3">
+                    <h4 class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">最常借還站點 TOP 5</h4>
+                    <div id="yb-top-stations" class="text-xs space-y-1"></div>
+                </div>
+
+                <div class="space-y-3 pt-2">
+                    <h4 class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">最常騎行路線 TOP 5</h4>
+                    <div id="yb-top-routes" class="text-xs space-y-1"></div>
+                </div>
+            </div>
+
+            <h3 class="text-xs font-bold text-gray-400 px-2">詳細記錄</h3>
             <div id="yb-list" class="space-y-3"></div>
         </div>
 
         <!-- 公車分頁 -->
         <div id="bus" class="tab-content hidden space-y-4">
-            <div class="bg-emerald-600 p-6 rounded-3xl text-white shadow-md">
-                <p class="text-sm opacity-90">公車累計回本</p>
+            <div class="bg-emerald-600 p-6 rounded-3xl text-white shadow-lg">
+                <p class="text-xs opacity-80 font-bold uppercase">Bus Achievement</p>
                 <p class="text-4xl font-black">NT$ <span id="bus-savings">0</span></p>
             </div>
+
+            <div class="achievement-card p-5 rounded-3xl border border-gray-100 shadow-sm space-y-4">
+                <div class="flex items-center space-x-3">
+                    <div class="bg-emerald-100 p-2 rounded-xl text-xl">🚌</div>
+                    <div><h3 class="font-bold text-slate-700">公車成就</h3><p class="text-xs text-gray-400">大台南公車數據</p></div>
+                </div>
+                
+                <div class="space-y-3">
+                    <h4 class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">熱門站點 TOP 5</h4>
+                    <div id="bus-top-stations" class="text-xs space-y-1"></div>
+                </div>
+                <div class="space-y-3 pt-2">
+                    <h4 class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">常搭路線與區段 TOP 5</h4>
+                    <div id="bus-top-routes" class="text-xs space-y-1"></div>
+                </div>
+            </div>
+
             <div id="bus-list" class="space-y-3"></div>
         </div>
 
         <!-- 台鐵分頁 -->
         <div id="train" class="tab-content hidden space-y-4">
-            <div class="bg-blue-800 p-6 rounded-3xl text-white shadow-md">
-                <p class="text-sm opacity-90">台鐵累計回本</p>
+            <div class="bg-blue-800 p-6 rounded-3xl text-white shadow-lg">
+                <p class="text-xs opacity-80 font-bold uppercase">Train Achievement</p>
                 <p class="text-4xl font-black">NT$ <span id="train-savings">0</span></p>
             </div>
+
+            <div class="achievement-card p-5 rounded-3xl border border-gray-100 shadow-sm space-y-4">
+                <div class="flex items-center space-x-3">
+                    <div class="bg-blue-100 p-2 rounded-xl text-xl">🚆</div>
+                    <div><h3 class="font-bold text-slate-700">台鐵成就</h3><p class="text-xs text-gray-400">軌道運輸數據</p></div>
+                </div>
+                
+                <div class="space-y-3">
+                    <h4 class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">最常進出車站 TOP 3</h4>
+                    <div id="train-top-stations" class="text-xs space-y-1"></div>
+                </div>
+                <div class="space-y-3 pt-2">
+                    <h4 class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">最常搭乘路線 TOP 3</h4>
+                    <div id="train-top-routes" class="text-xs space-y-1"></div>
+                </div>
+            </div>
+
             <div id="train-list" class="space-y-3"></div>
         </div>
     </main>
 
     <!-- 底部導覽列 -->
-    <div class="fixed bottom-0 left-0 right-0 bg-white/90 backdrop-blur-md border-t border-gray-200 flex justify-around p-3 pb-8 text-[11px] font-bold text-gray-400 z-50">
-        <button onclick="showTab('home')" class="flex flex-col items-center space-y-1"><span class="text-2xl">📊</span><span>首頁</span></button>
-        <button onclick="showTab('youbike')" class="flex flex-col items-center space-y-1"><span class="text-2xl">🚲</span><span>YouBike</span></button>
-        <button onclick="showTab('bus')" class="flex flex-col items-center space-y-1"><span class="text-2xl">🚌</span><span>公車</span></button>
-        <button onclick="showTab('train')" class="flex flex-col items-center space-y-1"><span class="text-2xl">🚆</span><span>台鐵</span></button>
+    <div class="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-md border-t border-gray-100 flex justify-around p-3 pb-8 text-[10px] font-black text-gray-400 z-50">
+        <button onclick="showTab('home')" class="flex flex-col items-center space-y-1 active:text-indigo-600 transition"><span>📊</span><span>HOME</span></button>
+        <button onclick="showTab('youbike')" class="flex flex-col items-center space-y-1 active:text-orange-500"><span>🚲</span><span>BIKE</span></button>
+        <button onclick="showTab('bus')" class="flex flex-col items-center space-y-1 active:text-emerald-600"><span>🚌</span><span>BUS</span></button>
+        <button onclick="showTab('train')" class="flex flex-col items-center space-y-1 active:text-blue-800"><span>🚆</span><span>TRAIN</span></button>
     </div>
 
     <script>
         const SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vS6jX6fVzdUxOnn4v3xIeB8mC_adsPJLUTTIhPpQaf_mPjG2OtPQt1HTu76Eie-_vjgpFVD5SQs7RiO/pub?output=csv';
-        let myChart;
 
         function showTab(id) {
             document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
@@ -164,15 +217,10 @@
                 skipEmptyLines: true,
                 complete: function(results) {
                     const cleanData = results.data
-                        .filter(row => {
-                            const transport = row['運具'] || row[' 運具'] || "";
-                            return transport.trim() !== "";
-                        })
+                        .filter(row => (row['運具'] || row[' 運具'] || "").trim() !== "")
                         .map(row => {
                             const newRow = {};
-                            Object.keys(row).forEach(key => {
-                                newRow[key.trim()] = row[key] ? row[key].toString().trim() : "";
-                            });
+                            Object.keys(row).forEach(key => { newRow[key.trim()] = row[key] ? row[key].toString().trim() : ""; });
                             return newRow;
                         });
                     processData(cleanData);
@@ -182,101 +230,130 @@
             });
         }
 
+        function getTop(map, limit) {
+            return Object.entries(map).sort((a,b) => b[1] - a[1]).slice(0, limit);
+        }
+
         function processData(data) {
             let stats = {
                 total: 0, yb: 0, bus: 0, train: 0,
-                transports: {}, days: {}
+                transports: {}, days: {},
+                ybTypes: {}, ybBikes: {}, ybStations: {}, ybRoutes: {},
+                busStations: {}, busRoutes: {},
+                trainStations: {}, trainRoutes: {}
             };
             let lists = { yb: '', bus: '', train: '' };
 
             const sortedData = [...data].reverse();
             const latestDate = sortedData[0]['日期'] || '--';
 
-            sortedData.forEach(row => {
+            data.forEach(row => {
                 const ybFee = parseFloat(row['YB車資']) || 0;
                 const busFee = parseFloat(row['NB車資']) || 0;
                 const trFee = parseFloat(row['TR車資']) || 0;
-                
+                const transport = row['運具'];
+
                 stats.total += (ybFee + busFee + trFee);
                 stats.yb += ybFee; stats.bus += busFee; stats.train += trFee;
-
-                const transport = row['運具'];
                 if(transport) stats.transports[transport] = (stats.transports[transport] || 0) + 1;
                 if(row['日期']) stats.days[row['日期']] = (stats.days[row['日期']] || 0) + 1;
 
                 if(transport === 'YouBike') {
-                    lists.yb += `<div class="bg-white p-3 rounded-xl shadow-sm record-card border-orange-400">
-                        <div class="flex justify-between text-[10px] mb-1"><span class="text-orange-600 font-bold">${row['日期']} | ${row['YB車種']}</span><span class="font-bold text-orange-600">$${ybFee}</span></div>
-                        <p class="text-sm font-bold text-slate-700">${row['YB起站']} ➔ ${row['YB迄站']}</p></div>`;
-                } else if(transport === '大台南公車') {
-                    lists.bus += `<div class="bg-white p-3 rounded-xl shadow-sm record-card border-emerald-500">
-                        <div class="flex justify-between text-[10px] mb-1"><span class="text-emerald-600 font-bold">${row['日期']} | ${row['NB路線']}</span><span class="font-bold text-emerald-600">$${busFee}</span></div>
-                        <p class="text-sm font-bold text-slate-700">${row['NB起站']} ➔ ${row['NB迄站']}</p></div>`;
-                } else if(transport === '台鐵') {
-                    lists.train += `<div class="bg-white p-3 rounded-xl shadow-sm record-card border-blue-700">
-                        <div class="flex justify-between text-[10px] mb-1"><span class="text-blue-700 font-bold">${row['日期']} | 區間車</span><span class="font-bold text-blue-700">$${trFee}</span></div>
-                        <p class="text-sm font-bold text-slate-700">${row['TR起站']} ➔ ${row['TR迄站']}</p></div>`;
+                    if(row['YB車種']) stats.ybTypes[row['YB車種']] = (stats.ybTypes[row['YB車種']] || 0) + 1;
+                    if(row['YB車號']) stats.ybBikes[row['YB車號']] = (stats.ybBikes[row['YB車號']] || 0) + 1;
+                    [row['YB起站'], row['YB迄站']].forEach(s => { if(s) stats.ybStations[s] = (stats.ybStations[s] || 0) + 1; });
+                    if(row['YB起站'] && row['YB迄站']) {
+                        const route = `${row['YB起站']} → ${row['YB迄站']}`;
+                        stats.ybRoutes[route] = (stats.ybRoutes[route] || 0) + 1;
+                    }
+                    lists.yb = `<div class="bg-white p-3 rounded-2xl shadow-sm record-card border-orange-400">
+                        <div class="flex justify-between text-[10px] mb-1 font-bold text-orange-600"><span>${row['日期']} | ${row['YB車種']}</span><span>$${ybFee}</span></div>
+                        <p class="text-sm font-bold text-slate-700">${row['YB起站']} ➔ ${row['YB迄站']}</p></div>` + lists.yb;
+                } 
+                else if(transport === '大台南公車') {
+                    [row['NB起站'], row['NB迄站']].forEach(s => { if(s) stats.busStations[s] = (stats.busStations[s] || 0) + 1; });
+                    if(row['NB起站'] && row['NB迄站']) {
+                        const route = `${row['NB路線']} (${row['NB起站']} → ${row['NB迄站']})`;
+                        stats.busRoutes[route] = (stats.busRoutes[route] || 0) + 1;
+                    }
+                    lists.bus = `<div class="bg-white p-3 rounded-2xl shadow-sm record-card border-emerald-500">
+                        <div class="flex justify-between text-[10px] mb-1 font-bold text-emerald-600"><span>${row['日期']} | ${row['NB路線']}</span><span>$${busFee}</span></div>
+                        <p class="text-sm font-bold text-slate-700">${row['NB起站']} ➔ ${row['NB迄站']}</p></div>` + lists.bus;
+                } 
+                else if(transport === '台鐵') {
+                    [row['TR起站'], row['TR迄站']].forEach(s => { if(s) stats.trainStations[s] = (stats.trainStations[s] || 0) + 1; });
+                    if(row['TR起站'] && row['TR迄站']) {
+                        const route = `${row['TR起站']} → ${row['TR迄站']}`;
+                        stats.trainRoutes[route] = (stats.trainRoutes[route] || 0) + 1;
+                    }
+                    lists.train = `<div class="bg-white p-3 rounded-2xl shadow-sm record-card border-blue-700">
+                        <div class="flex justify-between text-[10px] mb-1 font-bold text-blue-700"><span>${row['日期']} | 台鐵</span><span>$${trFee}</span></div>
+                        <p class="text-sm font-bold text-slate-700">${row['TR起站']} ➔ ${row['TR迄站']}</p></div>` + lists.train;
                 }
             });
 
-            // 主進度條渲染
+            // 首頁渲染
             const totalVal = Math.round(stats.total);
             const progress = Math.min((totalVal / 399) * 100, 100).toFixed(1);
             document.getElementById('progress-text').innerText = `${progress}%`;
             document.getElementById('main-progress-bar').style.width = `${progress}%`;
             document.getElementById('total-savings-val').innerText = `NT$ ${totalVal} / $399`;
             document.getElementById('latest-date').innerText = `統計至 ${latestDate}`;
-
-            // 分析渲染
-            const sortedTrans = Object.entries(stats.transports).sort((a,b)=>b[1]-a[1]);
+            
+            const sortedTrans = getTop(stats.transports, 1);
             document.getElementById('top-transport').innerText = sortedTrans[0] ? sortedTrans[0][0] : '--';
-            document.getElementById('top-transport-count').innerText = sortedTrans[0] ? `${sortedTrans[0][1]}次搭乘` : '--';
+            document.getElementById('top-transport-count').innerText = sortedTrans[0] ? `${sortedTrans[0][1]} 次搭乘` : '--';
 
-            const sortedDays = Object.entries(stats.days).sort((a,b)=>b[1]-a[1]);
+            const sortedDays = getTop(stats.days, 1);
             document.getElementById('busy-day').innerText = sortedDays[0] ? sortedDays[0][0] : '--';
             document.getElementById('busy-count').innerText = sortedDays[0] ? `${sortedDays[0][1]} 筆資料` : '--';
 
-            // 運具分項渲染
-            const updateMiniBar = (id, fee, count, total) => {
+            // 佔比渲染
+            const updateBar = (id, fee, count, total) => {
                 const p = total > 0 ? ((fee / total) * 100).toFixed(0) : 0;
                 document.getElementById(`${id}-count`).innerText = count;
                 document.getElementById(`${id}-percent`).innerText = `${p}%`;
                 document.getElementById(`${id}-mini-bar`).style.width = `${p}%`;
-                document.getElementById(`${id}-sum-text`).innerText = `已回本 NT$ ${Math.round(fee)}`;
             };
-            updateMiniBar('yb', stats.yb, stats.transports['YouBike'] || 0, stats.total);
-            updateMiniBar('bus', stats.bus, stats.transports['大台南公車'] || 0, stats.total);
-            updateMiniBar('train', stats.train, stats.transports['台鐵'] || 0, stats.total);
+            updateBar('yb', stats.yb, stats.transports['YouBike'] || 0, stats.total);
+            updateBar('bus', stats.bus, stats.transports['大台南公車'] || 0, stats.total);
+            updateBar('train', stats.train, stats.transports['台鐵'] || 0, stats.total);
 
-            // 分頁資料
+            // YouBike 成就
             document.getElementById('yb-savings').innerText = Math.round(stats.yb);
-            document.getElementById('bus-savings').innerText = Math.round(stats.bus);
-            document.getElementById('train-savings').innerText = Math.round(stats.train);
+            document.getElementById('yb-total-rides').innerText = `${stats.transports['YouBike'] || 0} 次`;
+            const yb20 = stats.ybTypes['2.0 /'] || 0;
+            const yb20e = stats.ybTypes['2.0E'] || 0;
+            document.getElementById('yb-types-desc').innerText = `2.0: ${yb20} / 2.0E: ${yb20e}`;
+            document.getElementById('yb-unique-stations').innerText = `${Object.keys(stats.ybStations).length} 站`;
+            document.getElementById('yb-unique-bikes').innerText = `${Object.keys(stats.ybBikes).length} 台`;
+            const topBike = getTop(stats.ybBikes, 1)[0];
+            document.getElementById('yb-top-bike').innerText = topBike ? `最常騎：${topBike[0]} (${topBike[1]}次)` : '--';
+            renderRanking('yb-top-stations', stats.ybStations, 5);
+            renderRanking('yb-top-routes', stats.ybRoutes, 5);
             document.getElementById('yb-list').innerHTML = lists.yb;
-            document.getElementById('bus-list').innerHTML = lists.bus;
-            document.getElementById('train-list').innerHTML = lists.train;
 
-            updateChart(stats.transports);
+            // 公車成就
+            document.getElementById('bus-savings').innerText = Math.round(stats.bus);
+            renderRanking('bus-top-stations', stats.busStations, 5);
+            renderRanking('bus-top-routes', stats.busRoutes, 5);
+            document.getElementById('bus-list').innerHTML = lists.bus;
+
+            // 台鐵成就
+            document.getElementById('train-savings').innerText = Math.round(stats.train);
+            renderRanking('train-top-stations', stats.trainStations, 3);
+            renderRanking('train-top-routes', stats.trainRoutes, 3);
+            document.getElementById('train-list').innerHTML = lists.train;
         }
 
-        function updateChart(transData) {
-            const ctx = document.getElementById('transportChart').getContext('2d');
-            if(myChart) myChart.destroy();
-            myChart = new Chart(ctx, {
-                type: 'doughnut',
-                data: {
-                    labels: Object.keys(transData),
-                    datasets: [{ 
-                        data: Object.values(transData), 
-                        backgroundColor: ['#6366f1', '#f59e0b', '#10b981'],
-                        borderWidth: 0
-                    }]
-                },
-                options: { 
-                    cutout: '70%',
-                    plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 10 } } } } 
-                }
-            });
+        function renderRanking(id, dataMap, limit) {
+            const top = getTop(dataMap, limit);
+            document.getElementById(id).innerHTML = top.map(([name, count], i) => 
+                `<div class="flex justify-between items-center py-1 border-b border-gray-50 last:border-0">
+                    <span class="truncate pr-2"><span class="text-indigo-400 font-bold mr-1">${i+1}.</span>${name}</span>
+                    <span class="font-bold text-slate-400 flex-shrink-0">${count}次</span>
+                </div>`
+            ).join('') || '<p class="text-gray-300">暫無數據</p>';
         }
 
         fetchData();
