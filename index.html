@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TPASS 即時看板 v2</title>
+    <title>TPASS 搭乘紀錄 v3</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -12,10 +12,10 @@
         .record-card { border-left: 4px solid; }
     </style>
 </head>
-<body class="bg-slate-50 pb-24">
+<body class="bg-slate-50 pb-24 text-slate-800">
 
     <nav class="bg-indigo-700 text-white p-4 shadow-md sticky top-0 z-50 flex justify-between items-center">
-        <h1 class="text-lg font-bold">TPASS 實時足跡</h1>
+        <h1 class="text-lg font-bold">TPASS 搭乘紀錄</h1>
         <button onclick="fetchData()" class="text-xs bg-indigo-500 px-2 py-1 rounded">更新資料</button>
     </nav>
 
@@ -30,14 +30,14 @@
                 <p class="opacity-80 text-sm">已回本車資總計</p>
                 <h2 id="total-savings" class="text-5xl font-black mt-1">NT$ 0</h2>
             </div>
-            <div class="grid grid-cols-2 gap-3 text-center">
+            <div class="grid grid-cols-2 gap-3 text-center text-sm">
                 <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100">
-                    <p class="text-xs text-slate-400 mb-1">最常搭乘日</p>
-                    <p id="busy-day" class="font-bold text-slate-700 font-mono text-sm">--</p>
+                    <p class="text-xs text-slate-400 mb-1">最多筆交易紀錄日</p>
+                    <p id="busy-day" class="font-bold">--</p>
                 </div>
                 <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100">
-                    <p class="text-xs text-slate-400 mb-1">主力運具</p>
-                    <p id="top-transport" class="font-bold text-slate-700">--</p>
+                    <p class="text-xs text-slate-400 mb-1">最常使用</p>
+                    <p id="top-transport" class="font-bold">--</p>
                 </div>
             </div>
             <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100">
@@ -47,33 +47,33 @@
 
         <div id="youbike" class="tab-content hidden space-y-4">
             <div class="bg-orange-500 p-5 rounded-2xl text-white shadow-md">
-                <p class="text-sm opacity-90 font-bold italic underline">YOUBIKE 統計</p>
+                <p class="text-xs opacity-90 font-bold">YOUBIKE SAVINGS</p>
                 <p class="text-3xl font-bold">NT$ <span id="yb-savings">0</span></p>
             </div>
-            <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 text-sm space-y-2">
-                <p>解鎖：<span id="yb-bike-count" class="font-bold text-orange-600">--</span> 台不同的車</p>
-                <p>熱門路徑：<span id="yb-top-route" class="font-bold">--</span></p>
+            <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 text-sm space-y-1">
+                <p>🚴 解鎖車輛：<span id="yb-bike-count" class="font-bold text-orange-600">0</span> 台</p>
+                <p>📍 熱門路徑：<span id="yb-top-route" class="font-bold">--</span></p>
             </div>
-            <h3 class="font-bold text-slate-700 px-1">🚲 搭乘明細</h3>
-            <div id="yb-list" class="space-y-2"></div>
+            <h3 class="font-bold text-slate-700 px-1 pt-2 border-t">🚲 搭乘明細</h3>
+            <div id="yb-list" class="space-y-3"></div>
         </div>
 
         <div id="bus" class="tab-content hidden space-y-4">
             <div class="bg-emerald-600 p-5 rounded-2xl text-white shadow-md">
-                <p class="text-sm opacity-90 font-bold italic underline">BUS 統計</p>
+                <p class="text-xs opacity-90 font-bold">BUS SAVINGS</p>
                 <p class="text-3xl font-bold">NT$ <span id="bus-savings">0</span></p>
             </div>
-            <h3 class="font-bold text-slate-700 px-1">🚌 公車紀錄</h3>
-            <div id="bus-list" class="space-y-2"></div>
+            <h3 class="font-bold text-slate-700 px-1 pt-2 border-t">🚌 公車明細</h3>
+            <div id="bus-list" class="space-y-3"></div>
         </div>
 
         <div id="train" class="tab-content hidden space-y-4">
             <div class="bg-blue-800 p-5 rounded-2xl text-white shadow-md">
-                <p class="text-sm opacity-90 font-bold italic underline">TRAIN 統計</p>
+                <p class="text-xs opacity-90 font-bold">TRAIN SAVINGS</p>
                 <p class="text-3xl font-bold">NT$ <span id="train-savings">0</span></p>
             </div>
-            <h3 class="font-bold text-slate-700 px-1">🚆 台鐵紀錄</h3>
-            <div id="train-list" class="space-y-2"></div>
+            <h3 class="font-bold text-slate-700 px-1 pt-2 border-t">🚆 台鐵明細</h3>
+            <div id="train-list" class="space-y-3"></div>
         </div>
     </main>
 
@@ -91,7 +91,7 @@
         function showTab(id) {
             document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
             document.getElementById(id).classList.remove('hidden');
-            window.scrollTo(0,0);
+            window.scrollTo(0, 0);
         }
 
         async function fetchData() {
@@ -99,6 +99,52 @@
             document.getElementById('app').classList.add('hidden');
             Papa.parse(SHEET_CSV_URL, {
                 download: true, header: true, skipEmptyLines: true,
+                complete: function(results) {
+                    // 過濾掉完全空白的行，並清理欄位名稱
+                    const cleanData = results.data
+                        .filter(row => row['日期'] && row['日期'].trim() !== "")
+                        .map(row => {
+                            const newRow = {};
+                            Object.keys(row).forEach(key => { newRow[key.trim()] = row[key] ? row[key].trim() : ""; });
+                            return newRow;
+                        });
+                    processData(cleanData);
+                    document.getElementById('loading').classList.add('hidden');
+                    document.getElementById('app').classList.remove('hidden');
+                }
+            });
+        }
+
+        function processData(data) {
+            let stats = { total: 0, yb: 0, bus: 0, train: 0, transports: {}, days: {}, ybBikes: {}, ybRoutes: {} };
+            let htmlLists = { yb: '', bus: '', train: '' };
+
+            // 拷貝一份資料並反轉，讓最新紀錄在上
+            const sortedData = [...data].reverse();
+
+            sortedData.forEach(row => {
+                const ybFee = parseFloat(row['YB車資']) || 0;
+                const busFee = parseFloat(row['NB車資']) || 0;
+                const trFee = parseFloat(row['TR車資']) || 0;
+                
+                stats.total += (ybFee + busFee + trFee);
+                stats.yb += ybFee; stats.bus += busFee; stats.train += trFee;
+
+                if(row['運具']) stats.transports[row['運具']] = (stats.transports[row['運具']] || 0) + 1;
+                if(row['日期']) stats.days[row['日期']] = (stats.days[row['日期']] || 0) + 1;
+
+                if(row['運具'] === 'YouBike') {
+                    if(row['YB車號']) stats.ybBikes[row['YB車號']] = (stats.ybBikes[row['YB車號']] || 0) + 1;
+                    const route = `${row['YB起站']} → ${row['YB迄站']}`;
+                    if(row['YB起站'] && row['YB迄站']) stats.ybRoutes[route] = (stats.ybRoutes[route] || 0) + 1;
+                    
+                    htmlLists.yb += `
+                        <div class="bg-white p-3 rounded-xl shadow-sm record-card border-orange-400">
+                            <div class="flex justify-between items-start">
+                                <span class="text-[10px] bg-orange-100 text-orange-600 px-2 py-0.5 rounded-full font-bold">${row['日期']} | ${row['YB車種']}</span>
+                                <span class="font-bold text-orange-600">$${ybFee}</span>
+                            </div>
+                            <p class="text-sm font-bold mt-1.5 text-slate-700">${row['YB起站']} ➔ ${row['YB迄站']}</p>
                 complete: function(results) {
                     const cleanData = results.data.map(row => {
                         const newRow = {};
