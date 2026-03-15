@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TPASS 搭乘紀錄</title>
+    <title>TPASS 即時看板</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -12,34 +12,34 @@
         .record-card { border-left: 4px solid; }
     </style>
 </head>
-<body class="bg-slate-50 pb-24 text-slate-800 font-sans">
+<body class="bg-slate-50 font-sans pb-24 text-slate-800">
 
     <nav class="bg-indigo-700 text-white p-4 shadow-md sticky top-0 z-50 flex justify-between items-center">
-        <h1 class="text-lg font-bold">TPASS 搭乘紀錄</h1>
-        <button onclick="fetchData()" class="text-xs bg-indigo-500 px-2 py-1 rounded hover:bg-indigo-400 transition">更新資料</button>
+        <h1 class="text-lg font-bold">TPASS 實時足跡</h1>
+        <button onclick="fetchData()" class="text-xs bg-indigo-500 px-2 py-1 rounded">更新資料</button>
     </nav>
 
-    <!-- 載入動畫 -->
     <div id="loading" class="flex flex-col justify-center items-center h-64 text-indigo-600 font-bold">
         <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-indigo-700 mb-4"></div>
         <p>同步雲端資料中...</p>
     </div>
 
     <main id="app" class="max-w-md mx-auto p-4 hidden">
-        <!-- 首頁統計 -->
+        <!-- 首頁 -->
         <div id="home" class="tab-content space-y-4">
             <div class="bg-gradient-to-br from-indigo-600 to-blue-500 p-6 rounded-3xl text-white shadow-lg text-center">
                 <p class="opacity-80 text-sm">已回本車資總計</p>
                 <h2 id="total-savings" class="text-5xl font-black mt-1">NT$ 0</h2>
             </div>
-            <div class="grid grid-cols-2 gap-3 text-center text-sm">
+            
+            <div class="grid grid-cols-2 gap-3 text-center">
                 <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100">
-                    <p class="text-xs text-slate-400 mb-1">最多筆紀錄日</p>
-                    <p id="busy-day" class="font-bold">--</p>
+                    <p class="text-xs text-slate-400 mb-1">最常搭乘日</p>
+                    <p id="busy-day" class="font-bold text-slate-700 font-mono text-sm">--</p>
                 </div>
                 <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100">
-                    <p class="text-xs text-slate-400 mb-1">最常使用</p>
-                    <p id="top-transport" class="font-bold">--</p>
+                    <p class="text-xs text-slate-400 mb-1">主力運具</p>
+                    <p id="top-transport" class="font-bold text-slate-700">--</p>
                 </div>
             </div>
             <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100">
@@ -47,47 +47,57 @@
             </div>
         </div>
 
-        <!-- YouBike 分頁 -->
+        <!-- YouBike -->
         <div id="youbike" class="tab-content hidden space-y-4">
             <div class="bg-orange-500 p-5 rounded-2xl text-white shadow-md">
-                <p class="text-xs opacity-90 font-bold italic">YOUBIKE STATISTICS</p>
+                <p class="text-sm opacity-90">YouBike 累計回本</p>
                 <p class="text-3xl font-bold">NT$ <span id="yb-savings">0</span></p>
             </div>
-            <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 text-sm space-y-1">
-                <p>🚴 解鎖車輛：<span id="yb-bike-count" class="font-bold text-orange-600">0</span> 台</p>
-                <p>📍 熱門路徑：<span id="yb-top-route" class="font-bold">--</span></p>
+            <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100">
+                <h3 class="font-bold text-slate-700 mb-3 text-sm">🚲 騎乘分析</h3>
+                <p class="text-sm text-slate-600 mb-2 font-medium">車種：<span id="yb-type-rank" class="text-orange-600">--</span></p>
+                <p class="text-sm text-slate-600 mb-2">解鎖：騎過 <span id="yb-bike-count" class="font-bold text-orange-600">--</span> 台不同的車</p>
             </div>
-            <h3 class="font-bold text-slate-700 px-1 pt-2 border-t">🚲 搭乘明細</h3>
+            
+            <h3 class="font-bold text-slate-700 px-1 pt-2 border-t text-sm">🗓️ 詳細紀錄 (由新到舊)</h3>
             <div id="yb-list" class="space-y-3"></div>
         </div>
 
-        <!-- 公車分頁 -->
+        <!-- 公車 -->
         <div id="bus" class="tab-content hidden space-y-4">
-            <div class="bg-emerald-600 p-5 rounded-2xl text-white shadow-md">
-                <p class="text-xs opacity-90 font-bold italic">BUS STATISTICS</p>
+             <div class="bg-emerald-600 p-5 rounded-2xl text-white shadow-md">
+                <p class="text-sm opacity-90">公車累計回本</p>
                 <p class="text-3xl font-bold">NT$ <span id="bus-savings">0</span></p>
             </div>
-            <h3 class="font-bold text-slate-700 px-1 pt-2 border-t">🚌 公車明細</h3>
+            <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100">
+                <h3 class="font-bold text-slate-700 mb-2 text-sm text-slate-400 uppercase">熱門站點 Top 5</h3>
+                <ul id="bus-stations" class="text-sm divide-y"></ul>
+            </div>
+            <h3 class="font-bold text-slate-700 px-1 pt-2 border-t text-sm">🗓️ 公車紀錄</h3>
             <div id="bus-list" class="space-y-3"></div>
         </div>
 
-        <!-- 台鐵分頁 -->
+        <!-- 台鐵 -->
         <div id="train" class="tab-content hidden space-y-4">
-            <div class="bg-blue-800 p-5 rounded-2xl text-white shadow-md">
-                <p class="text-xs opacity-90 font-bold italic">TRAIN STATISTICS</p>
+             <div class="bg-blue-800 p-5 rounded-2xl text-white shadow-md">
+                <p class="text-sm opacity-90">台鐵累計回本</p>
                 <p class="text-3xl font-bold">NT$ <span id="train-savings">0</span></p>
             </div>
-            <h3 class="font-bold text-slate-700 px-1 pt-2 border-t">🚆 台鐵明細</h3>
+            <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100">
+                <h3 class="font-bold text-slate-700 mb-2 text-sm text-slate-400 uppercase text-center py-2">熱門車站 Top 3</h3>
+                <ul id="train-stations" class="text-sm divide-y"></ul>
+            </div>
+            <h3 class="font-bold text-slate-700 px-1 pt-2 border-t text-sm">🗓️ 台鐵紀錄</h3>
             <div id="train-list" class="space-y-3"></div>
         </div>
     </main>
 
-    <!-- 底部導覽 -->
-    <div class="fixed bottom-0 left-0 right-0 bg-white/90 backdrop-blur-md border-t border-slate-200 flex justify-around p-3 pb-6 text-[10px] font-medium text-slate-500 z-50">
-        <button onclick="showTab('home')" class="flex flex-col items-center space-y-1 active:scale-95 transition"><span class="text-xl">📊</span><span>首頁</span></button>
-        <button onclick="showTab('youbike')" class="flex flex-col items-center space-y-1 active:scale-95 transition"><span class="text-xl">🚲</span><span>YouBike</span></button>
-        <button onclick="showTab('bus')" class="flex flex-col items-center space-y-1 active:scale-95 transition"><span class="text-xl">🚌</span><span>公車</span></button>
-        <button onclick="showTab('train')" class="flex flex-col items-center space-y-1 active:scale-95 transition"><span class="text-xl">🚆</span><span>台鐵</span></button>
+    <!-- 導覽列 -->
+    <div class="fixed bottom-0 left-0 right-0 bg-white/90 backdrop-blur-md border-t border-slate-200 flex justify-around p-3 pb-6 text-[10px] font-medium text-slate-500">
+        <button onclick="showTab('home')" class="flex flex-col items-center space-y-1"><span class="text-xl">📊</span><span>首頁</span></button>
+        <button onclick="showTab('youbike')" class="flex flex-col items-center space-y-1"><span class="text-xl">🚲</span><span>YouBike</span></button>
+        <button onclick="showTab('bus')" class="flex flex-col items-center space-y-1"><span class="text-xl">🚌</span><span>公車</span></button>
+        <button onclick="showTab('train')" class="flex flex-col items-center space-y-1"><span class="text-xl">🚆</span><span>台鐵</span></button>
     </div>
 
     <script>
@@ -96,9 +106,8 @@
 
         function showTab(id) {
             document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
-            const target = document.getElementById(id);
-            if(target) target.classList.remove('hidden');
-            window.scrollTo(0, 0);
+            document.getElementById(id).classList.remove('hidden');
+            window.scrollTo(0,0);
         }
 
         async function fetchData() {
@@ -110,302 +119,25 @@
                 header: true,
                 skipEmptyLines: true,
                 complete: function(results) {
-                    // 1. 清理資料：移除欄位名稱空格 + 過濾空白列
                     const cleanData = results.data
                         .filter(row => {
-                            // 檢查是否有「運具」和「日期」，避免抓到試算表底部的空行
+                            // 過濾掉運具名稱為空的資料
                             const transport = row['運具'] || row[' 運具'] || "";
                             return transport.trim() !== "";
                         })
                         .map(row => {
                             const newRow = {};
                             Object.keys(row).forEach(key => {
-                                newRow[key.trim()] = row[key] ? row[key].trim() : "";
+                                newRow[key.trim()] = row[key] ? row[key].toString().trim() : "";
                             });
                             return newRow;
                         });
-
                     processData(cleanData);
                     document.getElementById('loading').classList.add('hidden');
                     document.getElementById('app').classList.remove('hidden');
                 },
                 error: function(err) {
-                    alert("讀取失敗，請確認試算表權限：" + err);
-                }
-            });
-        }
-
-        function processData(data) {
-            let stats = { total: 0, yb: 0, bus: 0, train: 0, transports: {}, days: {}, ybBikes: {}, ybRoutes: {} };
-            let htmlLists = { yb: '', bus: '', train: '' };
-
-            // 反轉資料，讓最新紀錄在最上面
-            const sortedData = [...data].reverse();
-
-            sortedData.forEach(row => {
-                const ybFee = parseFloat(row['YB車資']) || 0;
-                const busFee = parseFloat(row['NB車資']) || 0;
-                const trFee = parseFloat(row['TR車資']) || 0;
-                
-                stats.total += (ybFee + busFee + trFee);
-                stats.yb += ybFee; stats.bus += busFee; stats.train += trFee;
-
-                if(row['運具']) stats.transports[row['運具']] = (stats.transports[row['運具']] || 0) + 1;
-                if(row['日期']) stats.days[row['日期']] = (stats.days[row['日期']] || 0) + 1;
-
-                // 生成 YouBike 卡片
-                if(row['運具'] === 'YouBike') {
-                    if(row['YB車號']) stats.ybBikes[row['YB車號']] = (stats.ybBikes[row['YB車號']] || 0) + 1;
-                    const route = `${row['YB起站']} → ${row['YB迄站']}`;
-                    if(row['YB起站'] && row['YB迄站']) stats.ybRoutes[route] = (stats.ybRoutes[route] || 0) + 1;
-                    
-                    htmlLists.yb += `
-                        <div class="bg-white p-3 rounded-xl shadow-sm record-card border-orange-400">
-                            <div class="flex justify-between items-start">
-                                <span class="text-[10px] bg-orange-100 text-orange-600 px-2 py-0.5 rounded-full font-bold">${row['日期']} | ${row['YB車種']}</span>
-                                <span class="font-bold text-orange-600">$${ybFee}</span>
-                            </div>
-                            <p class="text-sm font-bold mt-1.5 text-slate-700">${row['YB起站']} ➔ ${row['YB迄站']}</p>
-                            <p class="text-[10px] text-slate-400 mt-1 uppercase tracking-wider">車號: ${row['YB車號']}</p>
-                        </div>`;
-                } 
-                // 生成公車卡片
-                else if(row['運具'] === '大台南公車') {
-                    htmlLists.bus += `
-                        <div class="bg-white p-3 rounded-xl shadow-sm record-card border-emerald-500">
-                            <div class="flex justify-between items-start">
-                                <span class="text-[10px] bg-emerald-100 text-emerald-600 px-2 py-0.5 rounded-full font-bold">${row['日期']} | 路線 ${row['NB路線']}</span>
-                                <span class="font-bold text-emerald-600">$${busFee}</span>
-                            </div>
-                            <p class="text-sm font-bold mt-1.5 text-slate-700">${row['NB起站']} ➔ ${row['NB迄站']}</p>
-                        </div>`;
-                } 
-                // 生成台鐵卡片
-                else if(row['運具'] === '台鐵') {
-                    htmlLists.train += `
-                        <div class="bg-white p-3 rounded-xl shadow-sm record-card border-blue-800">
-                            <div class="flex justify-between items-start">
-                                <span class="text-[10px] bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full font-bold">${row['日期']} | 區間車</span>
-                                <span class="font-bold text-blue-800">$${trFee}</span>
-                            </div>
-                            <p class="text-sm font-bold mt-1.5 text-slate-700">${row['TR起站']} ➔ ${row['TR迄站']}</p>
-                        </div>`;
-                }
-            });
-
-            // 填入首頁數據
-            document.getElementById('total-savings').innerText = `NT$ ${Math.round(stats.total)}`;
-            const sortedTrans = Object.entries(stats.transports).sort((a,b)=>b[1]-a[1]);
-            document.getElementById('top-transport').innerText = sortedTrans[0] ? sortedTrans[0][0] : '--';
-            const sortedDays = Object.entries(stats.days).sort((a,b)=>b[1]-a[1]);
-            document.getElementById('busy-day').innerText = sortedDays[0] ? sortedDays[0][0] : '--';
-
-            // 填入分頁統計
-            document.getElementById('yb-savings').innerText = Math.round(stats.yb);
-            document.getElementById('bus-savings').innerText = Math.round(stats.bus);
-            document.getElementById('train-savings').innerText = Math.round(stats.train);
-            document.getElementById('yb-bike-count').innerText = Object.keys(stats.ybBikes).length;
-            const topRouteArr = Object.entries(stats.ybRoutes).sort((a,b)=>b[1]-a[1]);
-            document.getElementById('yb-top-route').innerText = topRouteArr[0] ? topRouteArr[0][0] : '--';
-            
-            // 填入明細清單
-            document.getElementById('yb-list').innerHTML = htmlLists.yb || '<p class="text-center text-slate-300 py-10">尚無紀錄</p>';
-            document.getElementById('bus-list').innerHTML = htmlLists.bus || '<p class="text-center text-slate-300 py-10">尚無紀錄</p>';
-            document.getElementById('train-list').innerHTML = htmlLists.train || '<p class="text-center text-slate-300 py-10">尚無紀錄</p>';
-
-            updateChart(stats.transports);
-        }
-
-        function updateChart(transData) {
-            const ctx = document.getElementById('transportChart').getContext('2d');
-            if(myChart) myChart.destroy();
-            myChart = new Chart(ctx, {
-                type: 'doughnut',
-                data: {
-                    labels: Object.keys(transData),
-                    datasets: [{ data: Object.values(transData), backgroundColor: ['#6366f1', '#f59e0b', '#10b981'] }]
-                },
-                options: { 
-                    responsive: true,
-                    maintainAspectRatio: true,
-                    plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 10 } } } } 
-                }
-            });
-        }
-
-        // 頁面載入後自動執行
-        window.onload = fetchData;
-    </script>
-</body>
-</html>                complete: function(results) {
-                    // 過濾掉完全空白的行，並清理欄位名稱
-                    const cleanData = results.data
-                        .filter(row => row['日期'] && row['日期'].trim() !== "")
-                        .map(row => {
-                            const newRow = {};
-                            Object.keys(row).forEach(key => { newRow[key.trim()] = row[key] ? row[key].trim() : ""; });
-                            return newRow;
-                        });
-                    processData(cleanData);
-                    document.getElementById('loading').classList.add('hidden');
-                    document.getElementById('app').classList.remove('hidden');
-                }
-            });
-        }
-
-        function processData(data) {
-            let stats = { total: 0, yb: 0, bus: 0, train: 0, transports: {}, days: {}, ybBikes: {}, ybRoutes: {} };
-            let htmlLists = { yb: '', bus: '', train: '' };
-
-            // 拷貝一份資料並反轉，讓最新紀錄在上
-            const sortedData = [...data].reverse();
-
-            sortedData.forEach(row => {
-                const ybFee = parseFloat(row['YB車資']) || 0;
-                const busFee = parseFloat(row['NB車資']) || 0;
-                const trFee = parseFloat(row['TR車資']) || 0;
-                
-                stats.total += (ybFee + busFee + trFee);
-                stats.yb += ybFee; stats.bus += busFee; stats.train += trFee;
-
-                if(row['運具']) stats.transports[row['運具']] = (stats.transports[row['運具']] || 0) + 1;
-                if(row['日期']) stats.days[row['日期']] = (stats.days[row['日期']] || 0) + 1;
-
-                if(row['運具'] === 'YouBike') {
-                    if(row['YB車號']) stats.ybBikes[row['YB車號']] = (stats.ybBikes[row['YB車號']] || 0) + 1;
-                    const route = `${row['YB起站']} → ${row['YB迄站']}`;
-                    if(row['YB起站'] && row['YB迄站']) stats.ybRoutes[route] = (stats.ybRoutes[route] || 0) + 1;
-                    
-                    htmlLists.yb += `
-                        <div class="bg-white p-3 rounded-xl shadow-sm record-card border-orange-400">
-                            <div class="flex justify-between items-start">
-                                <span class="text-[10px] bg-orange-100 text-orange-600 px-2 py-0.5 rounded-full font-bold">${row['日期']} | ${row['YB車種']}</span>
-                                <span class="font-bold text-orange-600">$${ybFee}</span>
-                            </div>
-                            <p class="text-sm font-bold mt-1.5 text-slate-700">${row['YB起站']} ➔ ${row['YB迄站']}</p>
-                complete: function(results) {
-                    const cleanData = results.data.map(row => {
-                        const newRow = {};
-                        Object.keys(row).forEach(key => { newRow[key.trim()] = row[key]; });
-                        return newRow;
-                    });
-                    processData(cleanData);
-                    document.getElementById('loading').classList.add('hidden');
-                    document.getElementById('app').classList.remove('hidden');
-                }
-            });
-        }
-
-        function processData(data) {
-            let stats = { total: 0, yb: 0, bus: 0, train: 0, transports: {}, days: {}, ybBikes: {}, ybRoutes: {} };
-            let htmlLists = { yb: '', bus: '', train: '' };
-
-            // 反轉資料，讓最新的紀錄顯示在最上面
-            data.reverse().forEach(row => {
-                const ybFee = parseFloat(row['YB車資']) || 0;
-                const busFee = parseFloat(row['NB車資']) || 0;
-                const trFee = parseFloat(row['TR車資']) || 0;
-                
-                stats.total += (ybFee + busFee + trFee);
-                stats.yb += ybFee; stats.bus += busFee; stats.train += trFee;
-
-                if(row['運具']) stats.transports[row['運具']] = (stats.transports[row['運具']] || 0) + 1;
-                if(row['日期']) stats.days[row['日期']] = (stats.days[row['日期']] || 0) + 1;
-
-                // 生成清單 HTML
-                if(row['運具'] === 'YouBike') {
-                    stats.ybBikes[row['YB車號']] = (stats.ybBikes[row['YB車號']] || 0) + 1;
-                    const route = `${row['YB起站']} → ${row['YB迄站']}`;
-                    if(row['YB起站']) stats.ybRoutes[route] = (stats.ybRoutes[route] || 0) + 1;
-                    htmlLists.yb += `
-                        <div class="bg-white p-3 rounded-xl shadow-sm record-card border-orange-400">
-                            <div class="flex justify-between items-start">
-                                <span class="text-[10px] bg-orange-100 text-orange-600 px-2 py-0.5 rounded-full">${row['日期']} | ${row['YB車種']}</span>
-                                <span class="font-bold text-orange-600">$${ybFee}</span>
-                            </div>
-                            <p class="text-sm font-bold mt-1 text-slate-700">${row['YB起站']} ➔ ${row['YB迄站']}</p>
-                            <p class="text-[10px] text-slate-400 mt-1">車號: ${row['YB車號']}</p>
-                        </div>`;
-                } else if(row['運具'] === '大台南公車') {
-                    htmlLists.bus += `
-                        <div class="bg-white p-3 rounded-xl shadow-sm record-card border-emerald-500">
-                            <div class="flex justify-between items-start">
-                                <span class="text-[10px] bg-emerald-100 text-emerald-600 px-2 py-0.5 rounded-full">${row['日期']} | ${row['NB路線']}</span>
-                                <span class="font-bold text-emerald-600">$${busFee}</span>
-                            </div>
-                            <p class="text-sm font-bold mt-1 text-slate-700">${row['NB起站']} ➔ ${row['NB迄站']}</p>
-                        </div>`;
-                } else if(row['運具'] === '台鐵') {
-                    htmlLists.train += `
-                        <div class="bg-white p-3 rounded-xl shadow-sm record-card border-blue-800">
-                            <div class="flex justify-between items-start">
-                                <span class="text-[10px] bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full">${row['日期']} | 台鐵</span>
-                                <span class="font-bold text-blue-800">$${trFee}</span>
-                            </div>
-                            <p class="text-sm font-bold mt-1 text-slate-700">${row['TR起站']} ➔ ${row['TR迄站']}</p>
-                        </div>`;
-                }
-            });
-
-            // 渲染統計與清單
-            document.getElementById('total-savings').innerText = `NT$ ${Math.round(stats.total)}`;
-            document.getElementById('yb-savings').innerText = Math.round(stats.yb);
-            document.getElementById('bus-savings').innerText = Math.round(stats.bus);
-            document.getElementById('train-savings').innerText = Math.round(stats.train);
-            document.getElementById('yb-bike-count').innerText = Object.keys(stats.ybBikes).length;
-            const topRoute = Object.entries(stats.ybRoutes).sort((a,b)=>b[1]-a[1])[0];
-            document.getElementById('yb-top-route').innerText = topRoute ? topRoute[0] : '--';
-            
-            document.getElementById('yb-list').innerHTML = htmlLists.yb || '<p class="text-center text-slate-400 text-sm">尚無紀錄</p>';
-            document.getElementById('bus-list').innerHTML = htmlLists.bus || '<p class="text-center text-slate-400 text-sm">尚無紀錄</p>';
-            document.getElementById('train-list').innerHTML = htmlLists.train || '<p class="text-center text-slate-400 text-sm">尚無紀錄</p>';
-
-            const sortedTrans = Object.entries(stats.transports).sort((a,b)=>b[1]-a[1]);
-            document.getElementById('top-transport').innerText = sortedTrans[0] ? sortedTrans[0][0] : '--';
-            const sortedDays = Object.entries(stats.days).sort((a,b)=>b[1]-a[1]);
-            document.getElementById('busy-day').innerText = sortedDays[0] ? sortedDays[0][0] : '--';
-
-            updateChart(stats.transports);
-        }
-
-        function updateChart(transData) {
-            const ctx = document.getElementById('transportChart').getContext('2d');
-            if(myChart) myChart.destroy();
-            myChart = new Chart(ctx, {
-                type: 'doughnut',
-                data: {
-                    labels: Object.keys(transData),
-                    datasets: [{ data: Object.values(transData), backgroundColor: ['#6366f1', '#f59e0b', '#10b981'] }]
-                },
-                options: { plugins: { legend: { position: 'bottom' } } }
-            });
-        }
-        fetchData();
-    </script>
-</body>
-</html>
-        async function fetchData() {
-            document.getElementById('loading').classList.remove('hidden');
-            document.getElementById('app').classList.add('hidden');
-            
-            Papa.parse(SHEET_CSV_URL, {
-                download: true,
-                header: true,
-                skipEmptyLines: true,
-                complete: function(results) {
-                    const cleanData = results.data.map(row => {
-                        const newRow = {};
-                        Object.keys(row).forEach(key => {
-                            newRow[key.trim()] = row[key];
-                        });
-                        return newRow;
-                    });
-                    processData(cleanData);
-                    document.getElementById('loading').classList.add('hidden');
-                    document.getElementById('app').classList.remove('hidden');
-                },
-                error: function(err) {
-                    alert("讀取失敗，請確認試算表已發布至網路：" + err);
+                    alert("讀取失敗，請確認試算表：" + err);
                 }
             });
         }
@@ -416,8 +148,12 @@
                 transports: {}, days: {}, ybTypes: {}, ybBikes: {}, 
                 ybStations: {}, ybRoutes: {}, busRoutes: {}, busStations: {}, trainStations: {}
             };
+            let lists = { yb: '', bus: '', train: '' };
 
-            data.forEach(row => {
+            // 反轉資料，讓最新紀錄在上
+            const sortedData = [...data].reverse();
+
+            sortedData.forEach(row => {
                 const ybFee = parseFloat(row['YB車資']) || 0;
                 const busFee = parseFloat(row['NB車資']) || 0;
                 const trFee = parseFloat(row['TR車資']) || 0;
@@ -425,25 +161,53 @@
                 stats.total += (ybFee + busFee + trFee);
                 stats.yb += ybFee; stats.bus += busFee; stats.train += trFee;
 
-                if(row['運具']) stats.transports[row['運具']] = (stats.transports[row['運具']] || 0) + 1;
+                const transport = row['運具'];
+                if(transport) stats.transports[transport] = (stats.transports[transport] || 0) + 1;
                 if(row['日期']) stats.days[row['日期']] = (stats.days[row['日期']] || 0) + 1;
 
-                if(row['運具'] === 'YouBike') {
+                if(transport === 'YouBike') {
                     if(row['YB車種']) stats.ybTypes[row['YB車種']] = (stats.ybTypes[row['YB車種']] || 0) + 1;
                     if(row['YB車號']) stats.ybBikes[row['YB車號']] = (stats.ybBikes[row['YB車號']] || 0) + 1;
                     [row['YB起站'], row['YB迄站']].forEach(s => { if(s) stats.ybStations[s] = (stats.ybStations[s] || 0) + 1; });
-                    const route = `${row['YB起站']} → ${row['YB迄站']}`;
-                    if(row['YB起站'] && row['YB迄站']) stats.ybRoutes[route] = (stats.ybRoutes[route] || 0) + 1;
+                    
+                    lists.yb += `
+                        <div class="bg-white p-3 rounded-xl shadow-sm record-card border-orange-400">
+                            <div class="flex justify-between text-[10px] mb-1">
+                                <span class="bg-orange-100 text-orange-600 px-2 py-0.5 rounded-full font-bold">${row['日期']} | ${row['YB車種']}</span>
+                                <span class="font-bold text-orange-600">$${ybFee}</span>
+                            </div>
+                            <p class="text-sm font-bold text-slate-700">${row['YB起站']} ➔ ${row['YB迄站']}</p>
+                            <p class="text-[9px] text-slate-400 mt-1 uppercase">Bike: ${row['YB車號']}</p>
+                        </div>`;
                 }
-                if(row['運具'] === '大台南公車') {
+                else if(transport === '大台南公車') {
                     if(row['NB路線']) stats.busRoutes[row['NB路線']] = (stats.busRoutes[row['NB路線']] || 0) + 1;
                     [row['NB起站'], row['NB迄站']].forEach(s => { if(s) stats.busStations[s] = (stats.busStations[s] || 0) + 1; });
+                    
+                    lists.bus += `
+                        <div class="bg-white p-3 rounded-xl shadow-sm record-card border-emerald-500">
+                            <div class="flex justify-between text-[10px] mb-1">
+                                <span class="bg-emerald-100 text-emerald-600 px-2 py-0.5 rounded-full font-bold">${row['日期']} | ${row['NB路線']}</span>
+                                <span class="font-bold text-emerald-600">$${busFee}</span>
+                            </div>
+                            <p class="text-sm font-bold text-slate-700">${row['NB起站']} ➔ ${row['NB迄站']}</p>
+                        </div>`;
                 }
-                if(row['運具'] === '台鐵') {
+                else if(transport === '台鐵') {
                     [row['TR起站'], row['TR迄站']].forEach(s => { if(s) stats.trainStations[s] = (stats.trainStations[s] || 0) + 1; });
+                    
+                    lists.train += `
+                        <div class="bg-white p-3 rounded-xl shadow-sm record-card border-blue-800">
+                            <div class="flex justify-between text-[10px] mb-1">
+                                <span class="bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full font-bold">${row['日期']} | 區間</span>
+                                <span class="font-bold text-blue-800">$${trFee}</span>
+                            </div>
+                            <p class="text-sm font-bold text-slate-700">${row['TR起站']} ➔ ${row['TR迄站']}</p>
+                        </div>`;
                 }
             });
 
+            // 數據渲染
             document.getElementById('total-savings').innerText = `NT$ ${Math.round(stats.total)}`;
             document.getElementById('yb-savings').innerText = Math.round(stats.yb);
             document.getElementById('bus-savings').innerText = Math.round(stats.bus);
@@ -451,25 +215,20 @@
 
             const sortedTrans = Object.entries(stats.transports).sort((a,b)=>b[1]-a[1]);
             document.getElementById('top-transport').innerText = sortedTrans[0] ? sortedTrans[0][0] : '--';
-
             const sortedDays = Object.entries(stats.days).sort((a,b)=>b[1]-a[1]);
             document.getElementById('busy-day').innerText = sortedDays[0] ? sortedDays[0][0] : '--';
 
-            const ybTypeStr = Object.entries(stats.ybTypes).map(([k,v])=>`${k}(${v}次)`).join(' / ');
-            document.getElementById('yb-type-rank').innerText = ybTypeStr || '--';
+            document.getElementById('yb-type-rank').innerText = Object.entries(stats.ybTypes).map(([k,v])=>`${k}(${v})`).join(' / ') || '--';
             document.getElementById('yb-bike-count').innerText = Object.keys(stats.ybBikes).length;
-            const topBike = Object.entries(stats.ybBikes).sort((a,b)=>b[1]-a[1])[0];
-            document.getElementById('yb-top-bike').innerText = topBike ? topBike[0] : '--';
-            const topRoute = Object.entries(stats.ybRoutes).sort((a,b)=>b[1]-a[1])[0];
-            document.getElementById('yb-top-route').innerText = topRoute ? topRoute[0] : '無數據';
+            
+            // 列表渲染
+            document.getElementById('yb-list').innerHTML = lists.yb || '<p class="text-center text-slate-400 text-xs py-4">無紀錄</p>';
+            document.getElementById('bus-list').innerHTML = lists.bus || '<p class="text-center text-slate-400 text-xs py-4">無紀錄</p>';
+            document.getElementById('train-list').innerHTML = lists.train || '<p class="text-center text-slate-400 text-xs py-4">無紀錄</p>';
 
-            renderUIList('yb-stations', stats.ybStations, 3);
             renderUIList('bus-stations', stats.busStations, 5);
             renderUIList('train-stations', stats.trainStations, 3);
             
-            const topBus = Object.entries(stats.busRoutes).sort((a,b)=>b[1]-a[1])[0];
-            document.getElementById('top-bus-route').innerText = topBus ? topBus[0] : '--';
-
             updateChart(stats.transports);
         }
 
